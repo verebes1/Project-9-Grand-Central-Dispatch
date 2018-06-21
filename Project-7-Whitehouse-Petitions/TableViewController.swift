@@ -21,6 +21,7 @@ class TableViewController: UITableViewController {
     
     //MARK:- Get petitions from Whitehouse
     func downloadPetitions(){
+        
         let urlString: String
         
         if navigationController?.tabBarItem.tag == 0{
@@ -28,15 +29,17 @@ class TableViewController: UITableViewController {
         } else {
             urlString = "https://api.whitehouse.gov/v1/petitions.json?signatureCountFloor=10000&limit=100"
         }
-
-        if let url = URL(string: urlString) {
-            if let data = try? String(contentsOf: url) {
-                let json = JSON(parseJSON: data)
-                
-                if json["metadata"]["responseInfo"]["status"].intValue == 200 {
-                    //we can parse the JSON
-                    parse(json)
-                    return
+        DispatchQueue.global(qos: .userInitiated).async { [unowned
+            self] in
+            if let url = URL(string: urlString) {
+                if let data = try? String(contentsOf: url) {
+                    let json = JSON(parseJSON: data)
+                    
+                    if json["metadata"]["responseInfo"]["status"].intValue == 200 {
+                        //we can parse the JSON
+                        self.parse(json)
+                        return
+                    }
                 }
             }
         }
@@ -45,9 +48,12 @@ class TableViewController: UITableViewController {
     }
     
     func showError(){
-        let ac = UIAlertController(title: "Loading error", message: "There was an error loading the feed plese check your internet connection and try again later.", preferredStyle: .alert)
-        ac.addAction(UIAlertAction(title: "OK", style: .default))
-        present(ac, animated: true)
+        DispatchQueue.main.async { [unowned self] in
+            let ac = UIAlertController(title: "Loading error", message: "There was an error loading the feed plese check your internet connection and try again later.", preferredStyle: .alert)
+            ac.addAction(UIAlertAction(title: "OK", style: .default))
+            self.present(ac, animated: true)
+        }
+
     }
     
     //MARK:- JSON Parsing
@@ -60,7 +66,9 @@ class TableViewController: UITableViewController {
             let obj = ["title": title, "body": body, "sigs": sigs]
             petitions.append(obj)
         }
-        tableView.reloadData()
+        DispatchQueue.main.async { [unowned self] in
+            self.tableView.reloadData()
+        }
     }
 
     //MARK:- TableView Methods
