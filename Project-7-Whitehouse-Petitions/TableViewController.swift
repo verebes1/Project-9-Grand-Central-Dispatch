@@ -15,12 +15,12 @@ class TableViewController: UITableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        downloadPetitions()
+        performSelector(inBackground: #selector(downloadPetitions), with: nil)
         
     }
     
     //MARK:- Get petitions from Whitehouse
-    func downloadPetitions(){
+    @objc func downloadPetitions(){
         
         let urlString: String
         
@@ -29,25 +29,23 @@ class TableViewController: UITableViewController {
         } else {
             urlString = "https://api.whitehouse.gov/v1/petitions.json?signatureCountFloor=10000&limit=100"
         }
-        DispatchQueue.global(qos: .userInitiated).async { [unowned
-            self] in
-            if let url = URL(string: urlString) {
-                if let data = try? String(contentsOf: url) {
-                    let json = JSON(parseJSON: data)
-                    
-                    if json["metadata"]["responseInfo"]["status"].intValue == 200 {
-                        //we can parse the JSON
-                        self.parse(json)
-                        return
-                    }
+        if let url = URL(string: urlString) {
+            if let data = try? String(contentsOf: url) {
+                let json = JSON(parseJSON: data)
+                
+                if json["metadata"]["responseInfo"]["status"].intValue == 200 {
+                    //we can parse the JSON
+                    parse(json)
+                    return
                 }
             }
         }
         //the error message only shows if any of the conditions will fail and we will not get to parse and return
-        showError()
+        performSelector(onMainThread: #selector(showError), with: nil, waitUntilDone: false)
+        
     }
     
-    func showError(){
+    @objc func showError(){
         DispatchQueue.main.async { [unowned self] in
             let ac = UIAlertController(title: "Loading error", message: "There was an error loading the feed plese check your internet connection and try again later.", preferredStyle: .alert)
             ac.addAction(UIAlertAction(title: "OK", style: .default))
@@ -66,9 +64,7 @@ class TableViewController: UITableViewController {
             let obj = ["title": title, "body": body, "sigs": sigs]
             petitions.append(obj)
         }
-        DispatchQueue.main.async { [unowned self] in
-            self.tableView.reloadData()
-        }
+        tableView.performSelector(onMainThread: #selector(UITableView.reloadData), with: nil, waitUntilDone: false)
     }
 
     //MARK:- TableView Methods
